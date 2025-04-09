@@ -2,130 +2,126 @@
 GSheet Sheet("AKfycbxqj7fMJl7hUGovIReBfjli15bJ_kMah4bY0xiHRtijnv3v-53E98SMB3K7tur6x_My");
 
 #include <HX711.h>
+#include <ESP32Servo.h>
+
+// Definisi pin
 const int LOADCELL_DOUT_PIN = 2;
 const int LOADCELL_SCK_PIN = 4;
-const int BUTTON_PIN = 15;    // GPIO pin untuk tombol tare
+const int BUTTON_PIN = 15;    
+const int servo1Pin = 13;  
+const int servo2Pin = 14;  
+
+// Inisialisasi objek
 HX711 scale;
-
-// Kalibrasi sensor (sesuaikan dengan sistem anda)
-float CALIBRATION_FACTOR = -450.0; // Ubah sesuai kalibrasi
-float OFFSET = 0;          // Ubah sesuai offset
-unsigned long lastDebounceTime = 0;
-unsigned long debounceDelay = 50;
-
-// Flag untuk menandai servo sedang bergerak
-bool isServoMoving = false;
-
-#include <ESP32Servo.h>
-const int servo1Pin = 13;  // GPIO pin untuk servo1
-const int servo2Pin = 14;  // GPIO pin untuk servo2
 Servo myservo1;
 Servo myservo2;
 
+// Konstanta kalibrasi
+const float CALIBRATION_FACTOR = -450.0;
+float offset = 0;
+
+// Variabel untuk debouncing
+unsigned long lastDebounceTime = 0;
+const unsigned long DEBOUNCE_DELAY = 50;
+
+// Variabel status
+bool isServoMoving = false;
+
+// Konfigurasi WiFi
 const char* ssid = "your WiFi ssid"; 
 const char* password = "your WiFi password";
 
-float getWeight() {
-  if (scale.wait_ready_timeout(200)) {
-    return abs(scale.get_units(10)); // Baca 5 sample dan rata-rata
-  }
-  return -1.0; // Return error
-}
+// Konstanta untuk kategori berat
+const float BERAT_MIN = 20.0;
+const float BERAT_C = 100.0;
+const float BERAT_B = 200.0;
+const float BERAT_A = 300.0;
 
-void checkTareButton() {
-  int buttonState = digitalRead(BUTTON_PIN);
-  
-  if (buttonState == LOW) { // Tombol ditekan (karena PULLUP)
-    if ((millis() - lastDebounceTime) > debounceDelay) {
-      tareScale();
-      Serial.println("Tare berhasil!");
-    }
-    lastDebounceTime = millis();
-  }
+float getWeight() {
+  return scale.wait_ready_timeout(200) ? abs(scale.get_units(5)) : -1.0;
 }
 
 void tareScale() {
   Serial.println("Proses tare...");
-  
-  // Ambil 10 pembacaan untuk baseline
   scale.tare(10);
-  OFFSET = scale.get_offset();
-  
-  Serial.print("Offset baru: ");
-  Serial.println(OFFSET);
+  offset = scale.get_offset();
+  Serial.println("Offset baru: " + String(offset));
+}
+
+void checkTareButton() {
+  if (digitalRead(BUTTON_PIN) == LOW && (millis() - lastDebounceTime) > DEBOUNCE_DELAY) {
+    tareScale();
+    Serial.println("Tare berhasil!");
+    lastDebounceTime = millis();
+  }
 }
 
 String tentukanKategori(float berat) {
-  if (berat < 20) {
-    return "stay";
-  } else if (berat >= 20 && berat < 100) {
-    return "GradeC";
-  } else if (berat >= 100 && berat < 200) {
-    return "GradeB";
-  } else if (berat >= 200 && berat < 300) {
-    return "GradeA";
-  }
+  if (berat < BERAT_MIN) return "stay";
+  if (berat < BERAT_C) return "GradeC";
+  if (berat < BERAT_B) return "GradeB"; 
+  if (berat < BERAT_A) return "GradeA";
   return "Tidak Dikenali";
+}
+
+void movePitch(int awal, int akhir, int langkah) {
+  int increment = (akhir > awal) ? langkah : -langkah;
+  for(int pos = awal; (increment > 0) ? pos <= akhir : pos >= akhir; pos += increment) {
+    myservo2.write(pos);
+    delay(10);
+  }
+}
+
+void moveYaw(int awal, int akhir, int langkah) {
+  int increment = (akhir > awal) ? langkah : -langkah;
+  for(int pos = awal; (increment > 0) ? pos <= akhir : pos >= akhir; pos += increment) {
+    myservo1.write(pos);
+    delay(10);
+  }
 }
 
 void setup() {
   Serial.begin(115200);
 
-  // Inisialisasi load cell
+  // Setup load cell
   scale.begin(LOADCELL_DOUT_PIN, LOADCELL_SCK_PIN);
   scale.set_scale(CALIBRATION_FACTOR);
   
-  // Inisialisasi tombol
+  // Setup pin dan servo
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+  myservo1.attach(servo1Pin);
+  myservo2.attach(servo2Pin);
+  myservo1.write(0);
+  myservo2.write(0);
   
-  // Auto-tare awal
   tareScale();
 
-  myservo1.attach(servo1Pin);  // Attach servo1 ke pin 13
-  myservo2.attach(servo2Pin);  // Attach servo2 ke pin 14
-  
-  // Inisialisasi posisi awal
-  myservo1.write(0);         // Set ke posisi 0 derajat
-  myservo2.write(0);         // Set ke posisi 0 derajat
-
+  // Setup WiFi
   Sheet.connectWiFi(ssid, password);
-  Sheet.clearData(); // function to delete all data in the sheet
-  // Add // if you don't want it to be used
+  Sheet.clearData();
 }
 
 void loop() {
-  // Hanya jalankan pengukuran dan pengiriman jika servo tidak sedang bergerak
   if (!isServoMoving) {
     float berat = getWeight();
     String kategori = tentukanKategori(berat);
-    if (kategori != "stay")
-    {
+    
+    if (kategori != "stay") {
       Sheet.sendData(String(berat), kategori);
       if (Sheet.getHttpCode() > 0)
       {
-        isServoMoving = true; // Set flag bahwa servo mulai bergerak
+        isServoMoving = true;
+      
+        movePitch(0, 180, 5);  // Gerakan maju
+        moveYaw(0, 45, 5);
+        delay(500);                 // Waktu tunggu dikurangi
+        movePitch(180, 0, 5);  // Gerakan mundur
+        moveYaw(45, 0, 5);
         
-        // Gerakan dari 0° ke 180° dengan langkah lebih besar
-        for(int pos = 0; pos <= 180; pos += 5) {
-          myservo1.write(pos);
-          myservo2.write(pos);
-          delay(10);  // Kecepatan rotasi lebih cepat
-        }
-        
-        delay(1000); // Waktu tunggu lebih singkat
-        
-        // Gerakan kembali dari 180° ke 0° dengan langkah lebih besar
-        for(int pos = 180; pos >= 0; pos -= 5) {
-          myservo1.write(pos);
-          myservo2.write(pos);
-          delay(10);
-        }
-        
-        isServoMoving = false; // Reset flag setelah servo selesai bergerak
+        isServoMoving = false;
       }
     }
   }
   
-  // Cek tombol tare
   checkTareButton();
 }

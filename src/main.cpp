@@ -111,13 +111,26 @@ void loop() {
       if (Sheet.getHttpCode() > 0)
       {
         isServoMoving = true;
-      
+      if (kategori == "GradeC")
+      {
+        moveYaw(0, 45, 5);
+        delay(500); 
+        moveYaw(45, 0, 5);
+      }else if (kategori == "GradeB")
+      {
+        movePitch(0, 90, 5);  // Gerakan maju
+        moveYaw(0, 45, 5);
+        delay(500);   
+        movePitch(90, 0, 5);  // Gerakan mundur
+        moveYaw(45, 0, 5);
+      }else if (kategori == "GradeA")
+      {
         movePitch(0, 180, 5);  // Gerakan maju
         moveYaw(0, 45, 5);
-        delay(500);                 // Waktu tunggu dikurangi
+        delay(500); 
         movePitch(180, 0, 5);  // Gerakan mundur
         moveYaw(45, 0, 5);
-        
+      }
         isServoMoving = false;
       }
     }

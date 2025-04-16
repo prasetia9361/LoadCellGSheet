@@ -28,8 +28,8 @@ const unsigned long DEBOUNCE_DELAY = 50;
 bool isServoMoving = false;
 
 // Konfigurasi WiFi
-const char* ssid = "your WiFi ssid"; 
-const char* password = "your WiFi password";
+const char* ssid = "wefee"; 
+const char* password = "wepaywefee";
 
 // Konstanta untuk kategori berat
 const float BERAT_MIN = 20.0;
@@ -107,7 +107,9 @@ void loop() {
     String kategori = tentukanKategori(berat);
     
     if (kategori != "stay") {
-      Sheet.sendData(String(berat), kategori);
+      Serial.println("berat:");
+      Serial.println(berat);
+      Sheet.sendData(String(berat) + "Kg", kategori);
       if (Sheet.getHttpCode() > 0)
       {
         isServoMoving = true;

@@ -31,10 +31,14 @@ void GSheet::sendData(String colC){
     String payload;
     if (httpCode > 0){
       payload = http.getString();
-     Serial.println(httpCode);
-     Serial.println(payload);
+      Serial.println(httpCode);
+      Serial.println(payload);
+      Serial.println("URL: " + url);
+      Serial.println("WiFi Status: " + String(WiFi.status()));
      }else {
-     Serial.println("Failed");
+      Serial.println("Failed");
+      Serial.println("URL: " + url);
+      Serial.println("WiFi Status: " + String(WiFi.status()));
     }
         
      http.end();
@@ -45,16 +49,20 @@ void GSheet::sendData(String colC, String colD){
     http.begin(url.c_str()); //Specify the URL and certificate
     http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
     httpCode = http.GET();
-    String payload;
-    if (httpCode > 0){
-      payload = http.getString();
-     Serial.println(httpCode);
-     Serial.println(payload);
-     }else {
-     Serial.println("Failed");
-    }
+    // String payload;
+    // if (httpCode > 0){
+    //   payload = http.getString();
+    //   Serial.println(httpCode);
+    //   Serial.println(payload);
+    //   Serial.println("URL: " + url);
+    //   Serial.println("WiFi Status: " + String(WiFi.status()));
+    //  }else {
+    //   Serial.println("Failed");
+    //   Serial.println("URL: " + url);
+    //   Serial.println("WiFi Status: " + String(WiFi.status()));
+    // }
         
-     http.end();
+    http.end();
 }
 
 void GSheet::sendData(String colC, String colD,String colE){
@@ -65,10 +73,14 @@ void GSheet::sendData(String colC, String colD,String colE){
     String payload;
     if (httpCode > 0){
       payload = http.getString();
-     Serial.println(httpCode);
-     Serial.println(payload);
+      Serial.println(httpCode);
+      Serial.println(payload);
+      Serial.println("URL: " + url);
+      Serial.println("WiFi Status: " + String(WiFi.status()));
      }else {
-     Serial.println("Failed");
+      Serial.println("Failed");
+      Serial.println("URL: " + url);
+      Serial.println("WiFi Status: " + String(WiFi.status()));
     }
         
      http.end();
@@ -82,10 +94,14 @@ void GSheet::sendData(String colC, String colD,String colE, String colF){
     String payload;
     if (httpCode > 0){
       payload = http.getString();
-     Serial.println(httpCode);
-     Serial.println(payload);
+      Serial.println(httpCode);
+      Serial.println(payload);
+      Serial.println("URL: " + url);
+      Serial.println("WiFi Status: " + String(WiFi.status()));
      }else {
-     Serial.println("Failed");
+      Serial.println("Failed");
+      Serial.println("URL: " + url);
+      Serial.println("WiFi Status: " + String(WiFi.status()));
     }
         
      http.end();
@@ -99,10 +115,14 @@ void GSheet::sendData(String colC, String colD,String colE, String colF, String 
     String payload;
     if (httpCode > 0){
       payload = http.getString();
-     Serial.println(httpCode);
-     Serial.println(payload);
+      Serial.println(httpCode);
+      Serial.println(payload);
+      Serial.println("URL: " + url);
+      Serial.println("WiFi Status: " + String(WiFi.status()));
      }else {
-     Serial.println("Failed");
+      Serial.println("Failed");
+      Serial.println("URL: " + url);
+      Serial.println("WiFi Status: " + String(WiFi.status()));
     }
         
      http.end();

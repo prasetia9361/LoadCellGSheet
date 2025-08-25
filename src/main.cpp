@@ -33,7 +33,7 @@ bool lastButtonState = HIGH;
 const char* ssid     = "wefee"; 
 const char* password = "wepaywefee";
 
-// Batas kategori berat (Kg)
+// Batas kategori berat (g)
 const float BERAT_C = 100.0;
 const float BERAT_B = 200.0;
 const float BERAT_A = 300.0;
@@ -43,26 +43,16 @@ void applicationTask1(void *param);
 
 float berat;
 String kategori = "stay";
-
-// enum State {
-//   IDLE,
-//   MEASURING,
-//   MOVING
-// };
-
-// State currentState = IDLE;
 unsigned long lastMoveTime = 0;
 
 
 float getWeight() {
-  // if (!scale.wait_ready_timeout(200)) return -1.0;
-  // return abs(scale.get_units(10));
   long sum = 0;
   for (int i = 0; i < 120; i++) {
       while (!scale.is_ready()) {};        // tunggu siap
       sum += scale.get_units();           // baca bobot
   }
-  float beban = sum / 120.0;               // rata-rata 10 bacaan
+  float beban = sum / 120.0;               // rata-rata 120 bacaan
   return beban;
 }
 
@@ -70,20 +60,9 @@ void tareScale() {
   Serial.println("Proses tare...");
   scale.tare(120);
   offset = scale.get_offset();
-  // Serial.println("Offset baru: " + String(offset));
 }
 
 void checkTareButton() {
-  // static int lastButtonState = HIGH;
-  // int currentButtonState = digitalRead(BUTTON_PIN);
-
-  // if (lastButtonState == HIGH && currentButtonState == LOW && (millis() - lastDebounceTime) > DEBOUNCE_DELAY) {
-  //   tareScale();
-  //   Serial.println("Tare berhasil!");
-  //   lastDebounceTime = millis();
-  // }
-  // lastButtonState = currentButtonState;
-
   bool currentButtonState = digitalRead(BUTTON_PIN);
 
   if (currentButtonState != lastButtonState)
@@ -124,31 +103,24 @@ void moveServo(Servo &sv, int startDeg, int endDeg, int stepDeg) {
 void executeGradeC() {
   // Hanya yaw
   moveServo(servoYaw, 0, 45, 5);
-  // delay(500);
   moveServo(servoYaw, 45, 0, 5);
 }
 
 void executeGradeB() {
   // Pitch 0->60
   moveServo(servoPitch, 0, 60, 5);
-  // Setelah pitch selesai, yaw 0->45
   moveServo(servoYaw, 0, 45, 5);
-  // delay(1000);
-  // Kembali yaw 45->0
+
   moveServo(servoYaw, 45, 0, 5);
-  // Kembali pitch 60->0
   moveServo(servoPitch, 60, 0, 5);
 }
 
 void executeGradeA() {
   // Pitch 0->120
   moveServo(servoPitch, 0, 120, 5);
-  // Setelah pitch selesai, yaw 0->45
   moveServo(servoYaw, 0, 45, 5);
-  // delay(1000);
-  // Kembali yaw 45->0
+
   moveServo(servoYaw, 45, 0, 5);
-  // Kembali pitch 120->0
   moveServo(servoPitch, 120, 0, 5);
 }
 
@@ -164,8 +136,6 @@ void setup() {
   servoPitch.attach(SERVO_PITCH_PIN);
   servoYaw.write(0);
   servoPitch.write(0);
-
-  // tareScale();
 
   // Koneksi WiFi
   TaskHandle_t task0;
@@ -194,59 +164,16 @@ void setup() {
 
 void loop() {
   vTaskDelay(pdMS_TO_TICKS(50));
-  
-  // checkTareButton();
-
-  // switch (currentState) {
-  //   case IDLE:
-  //     scale.power_up();
-  //     berat = getWeight();
-  //     kategori = tentukanKategori(berat);
-
-  //     if (kategori != "stay") {
-  //       // Serial.println("Berat: " + String(berat) + " Kg, Kategori: " + kategori);
-  //       Sheet.sendData(String(berat) + "Kg", kategori);
-
-  //       if (Sheet.getHttpCode() > 0) {
-  //         scale.power_down();
-  //         currentState = MOVING;
-  //       }
-  //     }
-  //     break;
-
-  //   case MOVING:
-  //     if (kategori == "GradeC") {
-  //       executeGradeC();
-  //     } else if (kategori == "GradeB") {
-  //       executeGradeB();
-  //     } else if (kategori == "GradeA") {
-  //       executeGradeA();
-  //     }
-  //     currentState = IDLE;
-  //     // Serial.println("loadcell ready");
-  //     break;
-
-  //   default:
-  //     currentState = IDLE;
-  //     break;
-  // }
-
-  // delay(50);
 }
 
 void applicationTask0(void *param){
   Sheet.connectWiFi(ssid, password);
   while (true)
   {
-    // if (kategori != "stay") {
       if (isServoMoving == true) {
-        Sheet.sendData(String(berat) + "Kg", kategori);
-        // if (Sheet.getHttpCode() > 0) {
-        //   scale.power_down();
-        // }
+        Sheet.sendData(String(berat) + "g", kategori);
         isServoMoving = false;
       }
-    // }
     delay(50);
   }
 }
@@ -287,7 +214,6 @@ void applicationTask1(void *param){
           executeGradeA();
         }
         currentState = IDLE;
-        // Serial.println("loadcell ready");
         break;
   
       default:
